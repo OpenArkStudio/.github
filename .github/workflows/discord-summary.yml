@@ -1,0 +1,44 @@
+name: Discord Summary
+
+on:
+  workflow_call:
+    inputs:
+      run_id:
+        description: Completed workflow run in the calling repository
+        required: true
+        type: string
+    secrets:
+      DISCORD_WEBHOOK_URL:
+        required: true
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  notify:
+    name: Send workflow summary
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: OpenArkStudio/.github
+          ref: main
+          persist-credentials: false
+      - uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          SOURCE_RUN_ID: ${{ inputs.run_id }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        with:
+          script: |
+            const notify = require(`${process.env.GITHUB_WORKSPACE}/scripts/discord.cjs`);
+            try {
+              await notify({
+                github, context, core,
+                runId: process.env.SOURCE_RUN_ID,
+                webhook: process.env.DISCORD_WEBHOOK_URL,
+              });
+            } catch (error) {
+              core.setFailed(error.message);
+            }
