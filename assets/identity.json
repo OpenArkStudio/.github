@@ -1,0 +1,73 @@
+{
+  "profile": "03-symbol",
+  "font": {
+    "family": "Inter",
+    "weight": 600,
+    "opticalSize": 24
+  },
+  "palette": {
+    "id": "electric",
+    "name": "电蓝与亮青",
+    "primary": "#1464F4",
+    "accent": "#06BBDD",
+    "ink": "#11213B",
+    "darkPrimary": "#508AFF",
+    "darkAccent": "#2CD6EE",
+    "darkInk": "#F2F7FF"
+  },
+  "dimensions": {
+    "openarkstudio": {
+      "width": 666,
+      "height": 224,
+      "iconLeft": 28,
+      "iconRight": 190.7169811320755,
+      "textLeft": 230.7169811320755,
+      "textTop": 46.72768456375839,
+      "baseline": 168,
+      "hullTop": 62.4,
+      "hullHeight": 88,
+      "xHeight": 80,
+      "gap": 40,
+      "symbolScale": 0.8301886792452831,
+      "opticalY": -17.6,
+      "iconBaseline": 150.4
+    },
+    "ark": {
+      "width": 477,
+      "height": 224,
+      "iconLeft": 28,
+      "iconRight": 190.7169811320755,
+      "textLeft": 230.7169811320755,
+      "textTop": 56.57818265682657,
+      "baseline": 168,
+      "hullTop": 80,
+      "hullHeight": 88,
+      "xHeight": 80,
+      "gap": 40,
+      "symbolScale": 0.8301886792452831,
+      "opticalY": 0,
+      "iconBaseline": 168
+    },
+    "arknet": {
+      "width": 702,
+      "height": 224,
+      "iconLeft": 28,
+      "iconRight": 190.7169811320755,
+      "textLeft": 230.7169811320755,
+      "textTop": 56.312961254612546,
+      "baseline": 168,
+      "hullTop": 80,
+      "hullHeight": 88,
+      "xHeight": 80,
+      "gap": 40,
+      "symbolScale": 0.8301886792452831,
+      "opticalY": 0,
+      "iconBaseline": 168
+    }
+  },
+  "heroWidths": {
+    "openarkstudio": 428,
+    "ark": 307,
+    "arknet": 451
+  }
+}
