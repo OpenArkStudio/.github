@@ -1,13 +1,18 @@
 {
-  "profile": "03-symbol",
+  "profile": "refined-cradle-inter",
+  "revision": "2026-10-22",
+  "source": "explorations-v14/logos/01-curve-inter",
   "font": {
     "family": "Inter",
     "weight": 600,
     "opticalSize": 24
   },
+  "lettering": {
+    "openarkstudio": "OpenArk / STUDIO",
+    "ark": "ARK",
+    "arknet": "ArkNet"
+  },
   "palette": {
-    "id": "electric",
-    "name": "电蓝与亮青",
     "primary": "#1464F4",
     "accent": "#06BBDD",
     "ink": "#11213B",
@@ -17,57 +22,65 @@
   },
   "dimensions": {
     "openarkstudio": {
-      "width": 666,
+      "width": 665.0,
       "height": 224,
-      "iconLeft": 28,
-      "iconRight": 190.7169811320755,
-      "textLeft": 230.7169811320755,
-      "textTop": 46.72768456375839,
-      "baseline": 168,
-      "hullTop": 62.4,
       "hullHeight": 88,
-      "xHeight": 80,
       "gap": 40,
-      "symbolScale": 0.8301886792452831,
-      "opticalY": -17.6,
-      "iconBaseline": 150.4
+      "capHeight": 72,
+      "symbolScale": 0.8461538461538461,
+      "opticalY": -17.6
     },
     "ark": {
-      "width": 477,
+      "width": 524.0,
       "height": 224,
-      "iconLeft": 28,
-      "iconRight": 190.7169811320755,
-      "textLeft": 230.7169811320755,
-      "textTop": 56.57818265682657,
-      "baseline": 168,
-      "hullTop": 80,
       "hullHeight": 88,
-      "xHeight": 80,
       "gap": 40,
-      "symbolScale": 0.8301886792452831,
-      "opticalY": 0,
-      "iconBaseline": 168
+      "capHeight": 96,
+      "symbolScale": 0.8461538461538461,
+      "opticalY": 0
     },
     "arknet": {
-      "width": 702,
+      "width": 688.0,
       "height": 224,
-      "iconLeft": 28,
-      "iconRight": 190.7169811320755,
-      "textLeft": 230.7169811320755,
-      "textTop": 56.312961254612546,
-      "baseline": 168,
-      "hullTop": 80,
       "hullHeight": 88,
-      "xHeight": 80,
       "gap": 40,
-      "symbolScale": 0.8301886792452831,
-      "opticalY": 0,
-      "iconBaseline": 168
+      "capHeight": 96,
+      "symbolScale": 0.8461538461538461,
+      "opticalY": 0
     }
   },
   "heroWidths": {
     "openarkstudio": 428,
-    "ark": 307,
-    "arknet": 451
+    "ark": 337,
+    "arknet": 442
+  },
+  "svgSha256": {
+    "openarkstudio-logo-light.svg": "ebcbf02e0ecb9d23413e60207417bfb5ff744eaeca26c7ca30926c301c08eed9",
+    "openarkstudio-wordmark-light.svg": "1cdf05ea3f4106faf0399d736d4390e0622990aecfb4d3d781f6779f1762b379",
+    "openarkstudio-icon.svg": "c495f68eebe2585acc2f54db8f90efca9d5dc9df3269bead79fa33b6b3459037",
+    "openarkstudio-logo-dark.svg": "ea736978d53635de322132b6128246ea888c7f37daf4a53243c02f5e02d3ccf5",
+    "openarkstudio-wordmark-dark.svg": "6b8711da0c30c029248911e2844f4a4bbeef87d674cd7b1eb7be782ec9f1bc3d",
+    "openarkstudio-icon-dark.svg": "fcc46474ab6cf527e6714e3f0c9eddf3228ca2801524f555bbc51f7a0f5c908d",
+    "openarkstudio-logo-mono.svg": "bfcc4b155fd2a132b32b1b3b676575a3d3d453c943560455a6dabc13973431d6",
+    "openarkstudio-wordmark-mono.svg": "1cdf05ea3f4106faf0399d736d4390e0622990aecfb4d3d781f6779f1762b379",
+    "openarkstudio-icon-mono.svg": "cc16baca21ec2aab774165fe029d896587e1a62b3bff636dd7684a7013c57bdf",
+    "ark-logo-light.svg": "3f3f9025a7374cb90aeca485b93096d475d75b316117cb66269571cd08ad831a",
+    "ark-wordmark-light.svg": "7a2e63720fe546da718678e09fbd9201c849faa8020a81b83a554bf88c4d19c0",
+    "ark-icon.svg": "f65eb645a62248368003755a695cd1f116f635bb4f341000a90f9b651ac0be4e",
+    "ark-logo-dark.svg": "d7548cfee89f353c75c9ea5f864da191e92d47b06baeef28bb88b998c1a6903a",
+    "ark-wordmark-dark.svg": "533709e78cb079c573c7d75c4f28cedbf9eddfcb746f68ea31bd39185e325c53",
+    "ark-icon-dark.svg": "e9063fd792dc703ae96a0a3a0e058a35c5ad98386e48cfcafb9e776e483a0095",
+    "ark-logo-mono.svg": "023688da11b8b46fc656ca963daf97c4442519e8d6c81ef89857253ec3d31798",
+    "ark-wordmark-mono.svg": "7a2e63720fe546da718678e09fbd9201c849faa8020a81b83a554bf88c4d19c0",
+    "ark-icon-mono.svg": "064dcb07734e7a4f49fcf63a9da20751811782fb258292273f2b961647c286aa",
+    "arknet-logo-light.svg": "86dd3f799f62b722550429c7e545bb9db63b1339fba6b03a794dbe2f2e89143b",
+    "arknet-wordmark-light.svg": "228e79f8ff5368a1df27b42bcfd01ab561d72be5f4ad297a9102b49996fefcb7",
+    "arknet-icon.svg": "8b153a4d2c0c3c3fe82602c7c8b57aba8a8020d12786b0e68e784bed8f54f5b2",
+    "arknet-logo-dark.svg": "2ebe7d8dd4e6e68fefafe67258916fa20547275942ece363c154faaf37beb329",
+    "arknet-wordmark-dark.svg": "14d894819b2630fd6069a6229974817554c4b67ea3b83ca5c27eaebefd58994a",
+    "arknet-icon-dark.svg": "e628a222ed7963c836a91f14f60b918f6b77155deeaa0fa42251cff43ae65d83",
+    "arknet-logo-mono.svg": "59b9c6f907a6dd504c879d37a44310455f679d663db35453d194b8a39c0d84a7",
+    "arknet-wordmark-mono.svg": "228e79f8ff5368a1df27b42bcfd01ab561d72be5f4ad297a9102b49996fefcb7",
+    "arknet-icon-mono.svg": "74a78a288793197550f2e819f955c04ba0e8b77b4000fc8635e25d7b4fa6e7a0"
   }
 }
