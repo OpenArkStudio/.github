@@ -1,6 +1,4 @@
-# .github
-
-[English](README.md)
+<p align="right">简体中文 · <a href="README.md">English</a></p>
 
 <p align="center">
   <picture>
@@ -8,6 +6,20 @@
     <img src="assets/openarkstudio-logo-light.svg" alt="OpenArkStudio" width="428">
   </picture>
 </p>
+
+<h3 align="center">面向联网应用的 C++ 基础组件。</h3>
+
+<p align="center">组织主页，视觉资源，共享配置。</p>
+
+<p align="center">
+  <a href="https://github.com/OpenArkStudio/ark/blob/main/CMakeLists.txt"><img src="https://img.shields.io/badge/C%2B%2B-20-5267df" alt="C++20"></a>
+  <a href="https://github.com/OpenArkStudio/ark/blob/main/LICENSE"><img src="https://img.shields.io/badge/ark-Apache--2.0-5267df" alt="ark: Apache-2.0"></a>
+  <a href="https://github.com/OpenArkStudio/arknet/blob/main/LICENSE"><img src="https://img.shields.io/badge/arknet-BSL--1.0-5267df" alt="arknet: BSL-1.0"></a>
+</p>
+
+<p align="center"><a href="https://github.com/OpenArkStudio"><strong>组织主页 →</strong></a> &nbsp; · &nbsp; <a href="https://github.com/OpenArkStudio/ark">ark</a> &nbsp; · &nbsp; <a href="https://github.com/OpenArkStudio/arknet">arknet</a> &nbsp; · &nbsp; <a href="assets/README_CN.md">品牌说明</a></p>
+
+---
 
 本仓库维护 [OpenArkStudio](https://github.com/OpenArkStudio) 的组织主页、视觉资源和共享仓库配置。
 

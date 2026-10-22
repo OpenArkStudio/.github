@@ -1,6 +1,4 @@
-# .github
-
-[简体中文](README_CN.md)
+<p align="right">English · <a href="README_CN.md">简体中文</a></p>
 
 <p align="center">
   <picture>
@@ -8,6 +6,20 @@
     <img src="assets/openarkstudio-logo-light.svg" alt="OpenArkStudio" width="428">
   </picture>
 </p>
+
+<h3 align="center">C++ building blocks for networked applications.</h3>
+
+<p align="center">Organization profile. Visual assets. Shared configuration.</p>
+
+<p align="center">
+  <a href="https://github.com/OpenArkStudio/ark/blob/main/CMakeLists.txt"><img src="https://img.shields.io/badge/C%2B%2B-20-5267df" alt="C++20"></a>
+  <a href="https://github.com/OpenArkStudio/ark/blob/main/LICENSE"><img src="https://img.shields.io/badge/ark-Apache--2.0-5267df" alt="ark: Apache-2.0"></a>
+  <a href="https://github.com/OpenArkStudio/arknet/blob/main/LICENSE"><img src="https://img.shields.io/badge/arknet-BSL--1.0-5267df" alt="arknet: BSL-1.0"></a>
+</p>
+
+<p align="center"><a href="https://github.com/OpenArkStudio"><strong>Organization →</strong></a> &nbsp; · &nbsp; <a href="https://github.com/OpenArkStudio/ark">ark</a> &nbsp; · &nbsp; <a href="https://github.com/OpenArkStudio/arknet">arknet</a> &nbsp; · &nbsp; <a href="assets/README.md">Brand guide</a></p>
+
+---
 
 Organization profile, shared visual assets and repository configuration for
 [OpenArkStudio](https://github.com/OpenArkStudio).
