@@ -7,10 +7,46 @@ Only ARK and arknet have `.github/workflows/notify-discord.yml`, which calls the
 workflow's metadata and job results. It does not execute the triggering commit or
 download its artifacts. A matrix produces one summary per workflow attempt.
 
-Messages show the repository, workflow, branch, commit, outcome, job counts,
-failed or cancelled job names, and a link to the run. Mentions are disabled.
+## Summary cards
+
+Each attempt produces one Discord Embed. Its title and color identify the outcome:
+✅ green for success, ❌ red for failure (including timeouts, action-required and
+startup failures), and ⏹ amber for cancellation. Other conclusions use a neutral
+color and their result label.
+
+The card shows the repository and workflow, PR number when GitHub supplies one,
+branch, linked short SHA and commit subject when available, job counts, and links
+to the exact run attempt. If multiple PRs are attached, the first is linked and
+the remaining count is shown. Successful runs omit zero counts and problem fields.
+A missing branch is marked detached; missing job data or commit metadata is not
+invented.
+
+Failed jobs appear first, before cancelled jobs and general metadata. Each job
+links to its own GitHub job page and shows up to two failed step names. If GitHub
+provides no failed step, the card says so. Extra failed steps have a remaining
+count. Large problem lists occupy at most two fields and explicitly report how
+many jobs were omitted; the run link leads to all results.
+
+**Duration** runs from the earliest executed job start to the latest job
+completion in the notified attempt. It includes gaps between those jobs, excludes
+the initial queue, and does not add parallel matrix durations. It does not use
+run creation or update timestamps, which can mislead on reruns and manual
+resends. If any executed job has missing or invalid timestamps, or all jobs are
+skipped, it displays `Unavailable`.
+
+Source titles, branch names, job names and step names are treated as text:
+Markdown is escaped and mentions and automatic URL formatting are neutralized.
+Only links built from the repository, validated IDs and SHA are emitted. Mentions
+are also disabled with `allowed_mentions`. Text truncation preserves complete
+escapes and Unicode characters; whole links are kept intact. Field budgets stay
+within Discord's title, field, field-count and 6,000-character aggregate
+[Embed limits](https://docs.discord.com/developers/resources/message#embed-limits).
+These are standard Webhook Embeds with Markdown links; they do not require buttons.
+
 Discord must return a message receipt for the notification job to pass. Explicit
 rate limits are retried twice; other delivery errors fail the notification job.
+The card formatting does not change the shared workflow, Secrets, permissions,
+resend behavior, or delivery/receipt rules.
 
 ## Webhook configuration
 

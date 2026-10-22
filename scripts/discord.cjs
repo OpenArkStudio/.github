@@ -7,10 +7,148 @@ const labels = {
   neutral: 'Neutral', skipped: 'Skipped', stale: 'Stale',
   startup_failure: 'Startup failure',
 };
+const events = {
+  pull_request: 'Pull request', push: 'Push', merge_group: 'Merge queue',
+  workflow_dispatch: 'Manual run', schedule: 'Scheduled run', workflow_run: 'Workflow completion',
+};
 
-function clip(value, limit) {
-  const text = String(value ?? '');
-  return text.length <= limit ? text : text.slice(0, limit - 3) + '...';
+// Escape before truncating, keeping escapes and surrogate pairs intact. Source metadata
+// must remain text: it cannot add Markdown links, mentions or URL previews.
+function text(value, limit, markdown = true) {
+  const tokens = Array.from(String(value ?? '').replace(/[\s\u0000-\u001f\u007f]+/g, ' ').trim(), char => {
+    if (char === '@') return '@\u200b';
+    if (char === '<') return '‹';
+    if (char === '>') return '›';
+    if (char === ':' || char === '.') return char + '\u200b';
+    return markdown && /[\\`*_{}[\]()#+!|~\-]/.test(char) ? '\\' + char : char;
+  });
+  const result = tokens.join('');
+  if (result.length <= limit) return result;
+  let shortened = '';
+  for (const token of tokens) {
+    if (shortened.length + token.length > limit - 1) break;
+    shortened += token;
+  }
+  return shortened + '…';
+}
+
+function positiveId(value) {
+  return /^\d{1,16}$/.test(String(value)) && Number.isSafeInteger(Number(value)) && Number(value) > 0;
+}
+
+function repositoryUrl(context) {
+  try {
+    const server = new URL(context.serverUrl || 'https://github.com');
+    const { owner, repo } = context.repo;
+    if (server.protocol !== 'https:' || server.username || server.password ||
+        ![owner, repo].every(part => /^[a-zA-Z0-9_.-]{1,100}$/.test(part))) return '';
+    const url = `${server.origin}/${owner}/${repo}`.replace(/[()]/g, char => char === '(' ? '%28' : '%29');
+    // Bound encoded targets too; never truncate a Markdown link inside its URL.
+    return url.length <= 256 ? url : '';
+  } catch {
+    return '';
+  }
+}
+
+function link(label, url) {
+  return url ? `[${label}](${url})` : label;
+}
+
+function duration(jobs) {
+  // Current-attempt job timestamps avoid original-run creation times on reruns,
+  // summed matrix durations, and updated_at (which is not a completion time).
+  const executed = jobs.filter(job => job.conclusion !== 'skipped');
+  if (!executed.length) return 'Unavailable';
+  let first = Infinity, last = -Infinity;
+  for (const job of executed) {
+    const start = Date.parse(job.started_at), end = Date.parse(job.completed_at);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return 'Unavailable';
+    first = Math.min(first, start);
+    last = Math.max(last, end);
+  }
+  const seconds = Math.floor((last - first) / 1000);
+  const hours = Math.floor(seconds / 3600), minutes = Math.floor(seconds % 3600 / 60);
+  return `${hours ? `${hours}h ` : ''}${hours || minutes ? `${minutes}m ` : ''}${seconds % 60}s`;
+}
+
+function problemFields(jobs, runUrl) {
+  const problems = [
+    ...jobs.filter(job => failed.has(job.conclusion)),
+    ...jobs.filter(job => job.conclusion === 'cancelled'),
+  ];
+  const fields = [];
+  let index = 0;
+  while (index < problems.length && fields.length < 2) {
+    const rows = [];
+    // Reserve space for a visible omission count in the final field.
+    const budget = fields.length === 1 ? 940 : 1024;
+    while (index < problems.length) {
+      const job = problems[index];
+      const jobUrl = positiveId(job.id) && runUrl ? `${runUrl}/job/${job.id}` : '';
+      const steps = (job.steps || []).filter(step => failed.has(step.conclusion));
+      const details = steps.slice(0, 2).map(step => text(step.name || '(unnamed step)', 80)).join('; ');
+      const stepSummary = steps.length
+        ? `\n  ↳ ${details}${steps.length > 2 ? ` (+${steps.length - 2} more failed steps)` : ''}`
+        : failed.has(job.conclusion) ? '\n  ↳ Failed step unavailable' : '';
+      const row = `${link(text(job.name || '(unnamed job)', 100), jobUrl)} — ${labels[job.conclusion]}${stepSummary}`;
+      if (rows.join('\n').length + (rows.length ? 1 : 0) + row.length > budget) break;
+      rows.push(row);
+      index++;
+    }
+    fields.push({ name: fields.length ? 'Problems (continued)' : 'Failed / cancelled jobs', value: rows.join('\n') });
+  }
+  if (index < problems.length) {
+    fields[fields.length - 1].value += `\n… ${problems.length - index} more jobs; see the run for all results.`;
+  }
+  return fields;
+}
+
+function buildPayload(context, run, jobs, runId) {
+  const repoUrl = repositoryUrl(context);
+  const runUrl = repoUrl ? `${repoUrl}/actions/runs/${runId}` : '';
+  const attemptUrl = runUrl && positiveId(run.run_attempt) ? `${runUrl}/attempts/${run.run_attempt}` : runUrl;
+  const outcome = labels[run.conclusion] || 'Unknown result';
+  const icon = run.conclusion === 'success' ? '✅' : failed.has(run.conclusion) ? '❌' : run.conclusion === 'cancelled' ? '⏹' : 'ℹ️';
+  const counts = { passed: 0, failed: 0, cancelled: 0, skipped: 0, other: 0 };
+  for (const job of jobs) {
+    if (job.conclusion === 'success') counts.passed++;
+    else if (failed.has(job.conclusion)) counts.failed++;
+    else if (job.conclusion === 'cancelled') counts.cancelled++;
+    else if (job.conclusion === 'skipped') counts.skipped++;
+    else counts.other++;
+  }
+  const summary = Object.entries(counts).filter(([, count]) => count).map(([label, count]) => `${count} ${label}`).join(' · ') || 'No jobs reported';
+  const pulls = (run.pull_requests || []).filter(pr => positiveId(pr.number));
+  const pull = pulls[0];
+  const ref = text(run.head_branch || '(detached)', 160);
+  const pullSummary = pull ? `${link(`PR #${pull.number}`, repoUrl ? `${repoUrl}/pull/${pull.number}` : '')}${pulls.length > 1 ? ` (+${pulls.length - 1} more PRs)` : ''}\n` : '';
+  const sha = typeof run.head_sha === 'string' && /^[a-fA-F0-9]{7,64}$/.test(run.head_sha) ? run.head_sha : '';
+  const displayTitle = run.display_title || run.name || 'Workflow completed';
+  const subject = (run.head_commit?.message || '').split(/\r?\n/)[0];
+  const commitTitle = subject === displayTitle ? '' : text(subject, 160);
+  const fields = [
+    ...problemFields(jobs, runUrl),
+    { name: 'Repository', value: link(text(`${context.repo.owner}/${context.repo.repo}`, 128), repoUrl), inline: true },
+    { name: 'Workflow', value: link(text(run.name || '(unnamed workflow)', 120), attemptUrl), inline: true },
+    { name: pull ? 'Pull request / branch' : 'Branch', value: pullSummary + ref },
+    { name: 'Commit', value: `${link(sha ? sha.slice(0, 12) : 'Unavailable', sha && repoUrl ? `${repoUrl}/commit/${sha}` : '')}${commitTitle ? `\n${commitTitle}` : ''}` },
+    { name: 'Duration', value: duration(jobs), inline: true },
+    { name: 'Jobs', value: summary, inline: true },
+    { name: 'Run', value: link(`Open run #${positiveId(run.run_number) ? run.run_number : '?'} · attempt ${positiveId(run.run_attempt) ? run.run_attempt : '?'}`, attemptUrl) },
+  ];
+  // Fixed field budgets keep this single embed below Discord's 6,000-character
+  // aggregate limit, including worst-case escaped text and two problem fields.
+  return {
+    allowed_mentions: { parse: [] },
+    embeds: [{
+      title: `${icon} ${outcome} · ${text(run.name || '(unnamed workflow)', 200)}`,
+      description: text(displayTitle, 512),
+      ...(attemptUrl ? { url: attemptUrl } : {}),
+      color: run.conclusion === 'success' ? 0x2da44e : failed.has(run.conclusion) ? 0xcf222e : run.conclusion === 'cancelled' ? 0xbf8700 : 0x6e7781,
+      fields,
+      footer: { text: `GitHub Actions · ${text(events[run.event] || run.event || 'Unknown event', 80, false)}` },
+    }],
+  };
 }
 
 module.exports = async function notify({
@@ -31,7 +169,7 @@ module.exports = async function notify({
   } catch {
     throw new Error('DISCORD_WEBHOOK_URL is not a valid Discord incoming Webhook.');
   }
-  if (!/^\d+$/.test(runId) || !Number.isSafeInteger(Number(runId)) || Number(runId) < 1) {
+  if (!positiveId(runId)) {
     throw new Error('A valid workflow run ID is required.');
   }
 
@@ -48,36 +186,7 @@ module.exports = async function notify({
     throw new Error('Could not read a completed source workflow and its jobs.');
   }
 
-  const counts = { passed: 0, failed: 0, cancelled: 0, skipped: 0, other: 0 };
-  for (const job of jobs) {
-    if (job.conclusion === 'success') counts.passed++;
-    else if (failed.has(job.conclusion)) counts.failed++;
-    else if (job.conclusion === 'cancelled') counts.cancelled++;
-    else if (job.conclusion === 'skipped') counts.skipped++;
-    else counts.other++;
-  }
-  const summary = Object.entries(counts).map(([label, count]) => `${count} ${label}`).join(', ');
-  const problemJobs = jobs.filter(job => failed.has(job.conclusion) || job.conclusion === 'cancelled');
-  const fields = [
-    { name: 'Repository', value: clip(`${repo.owner}/${repo.repo}`, 256), inline: true },
-    { name: 'Branch', value: clip(run.head_branch || '(detached)', 256), inline: true },
-    { name: 'Commit', value: clip(run.head_sha, 12), inline: true },
-    { name: 'Jobs', value: summary },
-  ];
-  if (problemJobs.length) {
-    fields.push({ name: 'Failed or cancelled jobs', value: clip(problemJobs.map(job => `${job.name}: ${job.conclusion}`).join('\n'), 1024) });
-  }
-  const payload = {
-    allowed_mentions: { parse: [] },
-    embeds: [{
-      title: clip(`${run.name}: ${labels[run.conclusion] ?? run.conclusion}`, 256),
-      description: clip(run.display_title || run.name, 512),
-      url: run.html_url,
-      color: run.conclusion === 'success' ? 0x2da44e : failed.has(run.conclusion) ? 0xcf222e : 0x6e7781,
-      fields,
-      footer: { text: clip(`Run #${run.run_number}, attempt ${run.run_attempt} | ${run.event}`, 256) },
-    }],
-  };
+  const payload = buildPayload(context, run, jobs, runId);
 
   // Retry only explicit rate limits; ambiguous delivery errors could duplicate a message.
   for (let attempt = 0; attempt < 3; attempt++) {
