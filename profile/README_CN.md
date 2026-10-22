@@ -12,11 +12,12 @@
 <p align="center">组合业务服务，连接应用系统，开放协作开发。</p>
 
 <p align="center">
-  <a href="https://github.com/OpenArkStudio/ark">ark</a> &nbsp; · &nbsp;
-  <a href="https://github.com/OpenArkStudio/arknet">arknet</a> &nbsp; · &nbsp;
-  <a href="https://openarkstudio.github.io/ark/zh/">框架文档</a> &nbsp; · &nbsp;
-  <a href="https://openarkstudio.github.io/arknet/zh/">网络库文档</a>
+  <a href="https://github.com/OpenArkStudio/ark/blob/main/CMakeLists.txt"><img src="https://img.shields.io/badge/C%2B%2B-20-5267df" alt="C++20"></a>
+  <a href="https://github.com/OpenArkStudio/ark/blob/main/LICENSE"><img src="https://img.shields.io/badge/ark-Apache--2.0-5267df" alt="ark: Apache-2.0"></a>
+  <a href="https://github.com/OpenArkStudio/arknet/blob/main/LICENSE"><img src="https://img.shields.io/badge/arknet-BSL--1.0-5267df" alt="arknet: BSL-1.0"></a>
 </p>
+
+<p align="center"><a href="#选择起点"><strong>浏览项目 →</strong></a> &nbsp; · &nbsp; <a href="https://openarkstudio.github.io/ark/zh/">框架文档</a> &nbsp; · &nbsp; <a href="https://openarkstudio.github.io/arknet/zh/">网络库文档</a> &nbsp; · &nbsp; <a href="https://discord.gg/GmyBbcv">Discord</a></p>
 
 ---
 
