@@ -2,9 +2,9 @@
 
 [简体中文](README_CN.md)
 
-The selected identity combines the cradle symbol with Inter 600 lettering and electric blue / cyan. OpenArkStudio uses one dot, ark uses three modules, and arknet uses linked nodes.
+The selected identity combines a continuous curved cradle with Inter 600 lettering and electric blue / cyan. OpenArkStudio uses one dot, ARK uses three square modules, and ArkNet uses linked square nodes. The wordmarks use `ARK` and `ArkNet`; the organization retains `OpenArk / STUDIO`.
 
-The horizontal lockup uses the selected **symbol emphasis** proportions: hull height 88, lowercase x-height 80, and a visible gap of 40 units. The organization symbol has a 17.6-unit optical lift beside the two-line OpenArk / STUDIO lettering.
+The horizontal lockup retains the selected **symbol emphasis**: hull height 88 and a visible gap of 40 units. ARK and ArkNet use a capital height of 96. The organization uses a capital height of 72 and a 17.6-unit optical lift for the symbol beside the two-line OpenArk / STUDIO lettering. The inner and outer curves meet the straight arms tangentially.
 
 ![Selected identity](identity-overview.png)
 

@@ -31,7 +31,7 @@ Organization profile, shared visual assets and repository configuration for
 
 ## Visual identity
 
-OpenArkStudio, ark and arknet share a cradle hull and Inter 600 lettering in electric blue and cyan. The organization carries one dot, ark carries three modules, and arknet carries linked nodes. The selected horizontal lockup gives the symbol slightly more emphasis; all lettering uses vector outlines.
+OpenArkStudio, ARK and ArkNet share a continuous curved cradle and Inter 600 lettering in electric blue and cyan. The organization carries one dot, ARK carries three square modules, and ArkNet carries linked square nodes. The wordmarks use `ARK` and `ArkNet`, with slightly more emphasis on the symbol; all lettering uses vector outlines.
 
 All brand SVG masters are archived in this repository's [`assets/`](assets/) directory. Project READMEs reference these files; documentation sites retain matching local copies.
 

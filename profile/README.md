@@ -2,8 +2,8 @@
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/OpenArkStudio/.github/main/assets/openarkstudio-logo-dark.svg">
-    <img src="https://raw.githubusercontent.com/OpenArkStudio/.github/main/assets/openarkstudio-logo-light.svg" alt="OpenArkStudio" width="428">
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/OpenArkStudio/.github/main/assets/openarkstudio-logo-dark.svg?v=20261022">
+    <img src="https://raw.githubusercontent.com/OpenArkStudio/.github/main/assets/openarkstudio-logo-light.svg?v=20261022" alt="OpenArkStudio" width="428">
   </picture>
 </p>
 
