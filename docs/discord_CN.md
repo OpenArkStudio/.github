@@ -8,19 +8,23 @@
 
 ## 汇总卡片
 
-每次执行生成一条 Discord Embed。标题与颜色共同表示结果：成功使用 ✅ 和绿色，
-失败使用 ❌ 和红色（包括超时、需要操作、启动失败），取消使用 ⏹ 和琥珀色。
-其他结果使用中性色，并显示对应状态。
+每次执行生成一张紧凑的 Discord Embed：
 
-卡片包含仓库、工作流、GitHub 提供的 PR 编号、分支、带链接的短 SHA、可用的提交标题、
-任务数量，以及本次执行的链接。关联多个 PR 时，显示第一个 PR 的链接和其余 PR 数量。
-成功时省略数量为零的状态和异常任务字段。分支缺失时标记为 detached；
-任务数据或提交元数据缺失时，不补造内容。
+- 顶部 author 行显示仓库名称和仓库所有者的头像。
+- 单一标题显示工作流名称和结果：✅ passed、❌ failed 或 ⏹ cancelled。
+  超时、启动失败等结果保留具体状态。标题链接到对应执行。
+- 描述显示变更标题、非零任务数量，以及 **View run** 链接。
+- 失败任务和加粗的失败步骤优先显示，其后是取消的任务，再展示常规信息。
+  每个任务最多显示两个失败步骤。
+- 三个 inline 字段集中显示 PR 或分支、带链接的短 SHA，以及 **Duration**。
+  提交标题与变更标题不同时，显示在 SHA 下方；重复时省略。
+- 页脚显示易懂的事件名称、运行编号，以及大于 1 的重试次数。
+  例如：`Merge queue · Run #129 · Attempt 2`。
 
-失败任务优先展示，其后是取消的任务，再展示常规信息。每个任务链接到对应的
-GitHub 任务页面，并显示最多两个失败步骤名称。GitHub 未提供失败步骤时，卡片明确提示。
-其余失败步骤显示剩余数量。异常任务清单最多占用两个字段，超出时明确提示省略的任务数量；
-完整结果通过运行链接查看。
+关联多个 PR 时，显示第一个 PR 的链接和其余数量。分支缺失时标记为 detached；
+任务数据或提交元数据缺失时，不补造内容。未提供失败步骤时，显示 `Step details unavailable`。
+异常任务清单最多占用两个字段，超出时明确提示省略的任务数量；完整结果通过运行链接查看。
+取消卡片沿用相同布局，不推测取消原因。
 
 **执行耗时（Duration）** 表示本次执行中，从最早一个已执行任务开始到最后一个任务结束的时间。
 它包含这些任务之间的间隔，不包含初始排队时间，也不累加并行矩阵任务的耗时。
@@ -32,7 +36,25 @@ GitHub 任务页面，并显示最多两个失败步骤名称。GitHub 未提供
 截断保留完整转义和 Unicode 字符，不截断链接。字段预算遵守 Discord 的标题长度、字段长度、
 字段数量和总计 6,000 字符的
 [Embed 限制](https://docs.discord.com/developers/resources/message#embed-limits)。
-卡片使用普通 Webhook Embed 和 Markdown 链接，不依赖按钮。
+author 名称也计入总字符数。
+
+## 布局选择与参考
+
+卡片仅使用标准
+[Embed author、标题、描述、inline 字段、页脚和颜色](https://docs.discord.com/developers/resources/message#embed-object)。
+字号、间距、列宽和移动端换行由 Discord 控制；inline 只是排版提示。
+消息载荷不包含 CSS 面板、自定义徽章或按钮。本地 HTML 预览只模拟结构，
+不能作为 Discord 实际渲染或投递验收的证据。
+
+紧凑标题、结果颜色和上下文链接参考了成熟开源项目
+[sarisia/actions-status-discord 的格式化源码](https://github.com/sarisia/actions-status-discord/blob/main/src/main.ts)
+及其[最简示例](https://github.com/sarisia/actions-status-discord#minimum)。
+同时查阅了 [Ilshidur/action-discord 的实现](https://github.com/Ilshidur/action-discord/blob/master/entrypoint.js)，
+用于核对普通 incoming Webhook 的投递形式。没有复制参考项目的代码、第三方品牌素材或投递行为。
+
+[Components V2](https://docs.discord.com/developers/components/overview) 提供更多布局组件，
+但需要启用 `IS_COMPONENTS_V2`，并替代传统 content 和 embeds。
+现有 Embed 已能满足通知需求，无需改变载荷模型，本次不引入 Components V2。
 
 只有收到 Discord 消息回执，通知任务才算通过。遇到明确的限流响应最多重试两次，
 其他发送错误会使通知任务失败。卡片格式调整不改变共享工作流、Secret、权限、

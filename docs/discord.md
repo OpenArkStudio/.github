@@ -9,23 +9,25 @@ download its artifacts. A matrix produces one summary per workflow attempt.
 
 ## Summary cards
 
-Each attempt produces one Discord Embed. Its title and color identify the outcome:
-✅ green for success, ❌ red for failure (including timeouts, action-required and
-startup failures), and ⏹ amber for cancellation. Other conclusions use a neutral
-color and their result label.
+Each attempt produces one compact Discord Embed:
 
-The card shows the repository and workflow, PR number when GitHub supplies one,
-branch, linked short SHA and commit subject when available, job counts, and links
-to the exact run attempt. If multiple PRs are attached, the first is linked and
-the remaining count is shown. Successful runs omit zero counts and problem fields.
-A missing branch is marked detached; missing job data or commit metadata is not
-invented.
+- The author row identifies the repository and shows its owner's avatar.
+- One linked title names the workflow and its result: ✅ passed, ❌ failed, or
+  ⏹ cancelled. Timeouts and startup failures keep their specific result labels.
+- The description shows the change title, nonzero job counts, and **View run**.
+- Failed jobs and their bold failed steps appear before the context row.
+  Cancelled jobs follow failures. Up to two failed steps are shown per job.
+- Three inline fields show the PR or branch, short linked SHA, and **Duration**.
+  A different commit subject appears under the SHA; a repeated subject is omitted.
+- The footer contains the friendly event name, run number, and retry attempt
+  when greater than one. For example: `Merge queue · Run #129 · Attempt 2`.
 
-Failed jobs appear first, before cancelled jobs and general metadata. Each job
-links to its own GitHub job page and shows up to two failed step names. If GitHub
-provides no failed step, the card says so. Extra failed steps have a remaining
-count. Large problem lists occupy at most two fields and explicitly report how
-many jobs were omitted; the run link leads to all results.
+If multiple PRs are attached, the first is linked and the remaining count is
+shown. A missing branch is marked detached. Missing job or commit metadata is
+not invented. Unavailable failed steps are labelled `Step details unavailable`.
+Large problem lists occupy at most two fields, with an explicit count of omitted
+jobs; the run link leads to all results. Cancelled cards use the same compact
+layout and do not guess why the run was cancelled.
 
 **Duration** runs from the earliest executed job start to the latest job
 completion in the notified attempt. It includes gaps between those jobs, excludes
@@ -41,7 +43,28 @@ are also disabled with `allowed_mentions`. Text truncation preserves complete
 escapes and Unicode characters; whole links are kept intact. Field budgets stay
 within Discord's title, field, field-count and 6,000-character aggregate
 [Embed limits](https://docs.discord.com/developers/resources/message#embed-limits).
-These are standard Webhook Embeds with Markdown links; they do not require buttons.
+The author name also counts toward the aggregate limit.
+
+## Layout choices and references
+
+The layout uses only the standard
+[Embed author, title, description, inline fields, footer and color](https://docs.discord.com/developers/resources/message#embed-object).
+Discord controls font sizes, spacing, column widths and mobile wrapping; inline
+fields are layout hints. There are no CSS panels, custom badges or buttons in
+the message payload. A local HTML preview only approximates this structure and
+is not evidence of rendering or delivery in Discord.
+
+The compact title, result color and linked context were informed by the mature
+[sarisia/actions-status-discord formatter](https://github.com/sarisia/actions-status-discord/blob/main/src/main.ts)
+and its [minimal examples](https://github.com/sarisia/actions-status-discord#minimum).
+The [Ilshidur/action-discord implementation](https://github.com/Ilshidur/action-discord/blob/master/entrypoint.js)
+was also reviewed as an example of plain incoming Webhook delivery. No code,
+third-party branding or delivery behavior was copied from these references.
+
+[Components V2](https://docs.discord.com/developers/components/overview) offers
+more layout primitives but requires `IS_COMPONENTS_V2` and replaces traditional
+content and embeds. The existing Embed covers this notification's needs without
+changing its payload model, so this change does not adopt Components V2.
 
 Discord must return a message receipt for the notification job to pass. Explicit
 rate limits are retried twice; other delivery errors fail the notification job.

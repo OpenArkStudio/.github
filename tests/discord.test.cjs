@@ -38,13 +38,15 @@ test('reports the completed attempt, suppresses mentions and records delivery', 
   assert.equal(sent[0].options.redirect, 'error');
   assert.deepEqual(sent[0].payload.allowed_mentions, { parse: [] });
   const embed = sent[0].payload.embeds[0];
-  assert.match(embed.title, /^✅ Succeeded/);
+  assert.match(embed.title, /^✅ CI passed$/);
   assert.equal(embed.color, 0x2da44e);
-  assert.equal(field(embed, 'Jobs'), '1 passed');
+  assert.match(embed.description, /1 passed · \[View run\]/);
   assert.equal(field(embed, 'Duration'), '2m 5s');
   assert.match(field(embed, 'Commit'), /\[aaaaaaaaaaaa\]\(https:\/\/github.com\/OpenArkStudio\/arknet\/commit\/a{40}\)\nFix connection retry/);
-  assert.match(field(embed, 'Run'), /actions\/runs\/42\/attempts\/2/);
-  assert.ok(!embed.fields.some(item => item.name.includes('Failed')));
+  assert.match(embed.description, /actions\/runs\/42\/attempts\/2/);
+  assert.equal(embed.fields.length, 3);
+  assert.ok(embed.fields.every(item => item.inline));
+  assert.deepEqual(embed.author, { name: 'OpenArkStudio / arknet', url: 'https://github.com/OpenArkStudio/arknet', icon_url: 'https://github.com/OpenArkStudio.png?size=64' });
   assert.deepEqual(outputs, { message_id: '456', channel_id: '789' });
   assert.ok(logs.every(line => !line.includes('test-secret')));
 });
@@ -59,14 +61,15 @@ test('summarizes matrix failures, timeouts, cancellations and skips', async () =
   ] });
   await notify(args);
   const embed = sent[0].payload.embeds[0];
-  assert.equal(embed.title, '❌ Failed · CI');
+  assert.equal(embed.title, '❌ CI failed');
   assert.equal(embed.color, 0xcf222e);
-  assert.equal(field(embed, 'Jobs'), '2 failed · 1 cancelled · 1 skipped');
-  assert.match(embed.fields[0].value, /^\[Windows\]\(https:\/\/github.com\/OpenArkStudio\/arknet\/actions\/runs\/42\/job\/101\) — Failed\n  ↳ Build/);
+  assert.match(embed.description, /\*\*2 failed\*\* · 1 cancelled · 1 skipped/);
+  assert.equal(embed.fields[0].name, 'Needs attention');
+  assert.match(embed.fields[0].value, /^\[Windows\]\(https:\/\/github.com\/OpenArkStudio\/arknet\/actions\/runs\/42\/job\/101\) — Failed\n  ↳ \*\*Build\*\*/);
   assert.match(embed.fields[0].value, /macOS.*Timed out/);
   assert.ok(embed.fields[0].value.indexOf('macOS') < embed.fields[0].value.indexOf('Linux'));
   assert.ok(!embed.fields[0].value.includes('Checkout'));
-  assert.match(embed.fields[0].value, /Failed step unavailable/);
+  assert.match(embed.fields[0].value, /Step details unavailable/);
 });
 
 function field(embed, name) {
@@ -78,11 +81,12 @@ function assertLimits(embed) {
   assert.ok(embed.description.length <= 4096);
   assert.ok(embed.footer.text.length <= 2048);
   assert.ok(embed.fields.length <= 25);
+  assert.ok(embed.author.name.length > 0 && embed.author.name.length <= 256);
   for (const item of embed.fields) {
     assert.ok(item.name.length > 0 && item.name.length <= 256);
     assert.ok(item.value.length > 0 && item.value.length <= 1024);
   }
-  const size = embed.title.length + embed.description.length + embed.footer.text.length +
+  const size = embed.title.length + embed.description.length + embed.footer.text.length + embed.author.name.length +
     embed.fields.reduce((sum, item) => sum + item.name.length + item.value.length, 0);
   assert.ok(size <= 6000, `Embed total: ${size}`);
 }
@@ -98,7 +102,7 @@ test('bounds escaped Unicode metadata and large failures without silently losing
   await notify(args);
   const embed = sent[0].payload.embeds[0];
   assertLimits(embed);
-  const problemText = embed.fields.filter(item => item.name.includes('jobs') || item.name === 'Problems (continued)').map(item => item.value).join('\n');
+  const problemText = embed.fields.filter(item => ['Needs attention', 'More jobs', 'Cancelled jobs'].includes(item.name)).map(item => item.value).join('\n');
   assert.match(problemText, /\(\+3 more failed steps\)/);
   const shown = (problemText.match(/ — Failed/g) || []).length;
   assert.match(problemText, new RegExp(`… ${500 - shown} more jobs; see the run for all results\\.`));
@@ -131,11 +135,11 @@ test('shows PR, branch, repository, workflow and exact-attempt links', async () 
   args.context.serverUrl = 'https://github.enterprise.example';
   await notify(args);
   const embed = sent[0].payload.embeds[0];
-  assert.match(field(embed, 'Repository'), /https:\/\/github.enterprise.example\/OpenArkStudio\/arknet/);
-  assert.match(field(embed, 'Workflow'), /actions\/runs\/42\/attempts\/2/);
-  assert.equal(field(embed, 'Pull request / branch'), '[PR #17](https://github.enterprise.example/OpenArkStudio/arknet/pull/17) (+1 more PRs)\nfix/retry');
+  assert.equal(embed.author.url, 'https://github.enterprise.example/OpenArkStudio/arknet');
+  assert.match(embed.description, /actions\/runs\/42\/attempts\/2/);
+  assert.equal(field(embed, 'Pull request'), '[PR #17](https://github.enterprise.example/OpenArkStudio/arknet/pull/17) (+1 more)\nfix/retry');
   assert.match(embed.url, /attempts\/2$/);
-  assert.equal(embed.footer.text, 'GitHub Actions · Pull request');
+  assert.equal(embed.footer.text, 'Pull request · Run #9 · Attempt 2');
 });
 
 test('escapes metadata Markdown, mentions, autolinks and injected URL boundaries', async () => {
@@ -153,7 +157,7 @@ test('escapes metadata Markdown, mentions, autolinks and injected URL boundaries
   assert.ok(!rendered.includes('](https://evil.example'));
   assert.ok(!rendered.includes('**bold**'));
   assert.ok(!rendered.includes('javascript:'));
-  assert.equal(field(embed, 'Pull request / branch'), undefined);
+  assert.equal(field(embed, 'Pull request'), undefined);
   assert.match(embed.title, /@\u200beveryone/);
   assert.match(embed.fields[0].value, /\\\]\\\(/);
   assertLimits(embed);
@@ -177,7 +181,7 @@ test('encodes parentheses in trusted server origins without breaking Markdown ta
   args.context.serverUrl = 'https://git(hub).example';
   await notify(args);
   const embed = sent[0].payload.embeds[0];
-  assert.equal(field(embed, 'Repository'), '[OpenArkStudio/arknet](https://git%28hub%29.example/OpenArkStudio/arknet)');
+  assert.equal(embed.author.url, 'https://git%28hub%29.example/OpenArkStudio/arknet');
   assertLimits(embed);
 });
 
@@ -219,11 +223,11 @@ test('distinguishes cancellation, special failure conclusions and missing job da
     const { args, sent } = setup({ run: { conclusion, head_branch: null, head_commit: null }, jobs: [] });
     await notify(args);
     const embed = sent[0].payload.embeds[0];
-    assert.equal(field(embed, 'Jobs'), 'No jobs reported');
+    assert.match(embed.description, /No jobs reported/);
     assert.equal(field(embed, 'Branch'), '\\(detached\\)');
     assert.ok(!field(embed, 'Commit').includes('undefined'));
     if (conclusion === 'cancelled') {
-      assert.match(embed.title, /^⏹ Cancelled/);
+      assert.match(embed.title, /^⏹ CI cancelled$/);
       assert.equal(embed.color, 0xbf8700);
     } else if (['timed_out', 'action_required', 'startup_failure'].includes(conclusion)) {
       assert.match(embed.title, /^❌/);
@@ -297,10 +301,42 @@ test('uses friendly event labels without repeating the commit subject', async ()
   } });
   await notify(args);
   const embed = sent[0].payload.embeds[0];
-  assert.equal(embed.title, '✅ Succeeded · Build & Test');
-  assert.equal(embed.description, subject);
+  assert.equal(embed.title, '✅ Build & Test passed');
+  assert.ok(embed.description.startsWith(subject + '\n'));
+  assert.equal(embed.description.split(subject).length - 1, 1);
   assert.ok(!field(embed, 'Commit').includes(subject));
-  assert.equal(embed.footer.text, 'GitHub Actions · Merge queue');
+  assert.equal(embed.footer.text, 'Merge queue · Run #9 · Attempt 2');
   assert.equal(field(embed, 'Duration'), '2m 5s');
+  assertLimits(embed);
+});
+
+
+test('keeps compact cards within standard Embed capabilities', async () => {
+  const { args, sent } = setup({ run: { run_attempt: 1, event: 'workflow_dispatch' } });
+  await notify(args);
+  const payload = sent[0].payload, embed = payload.embeds[0];
+  assert.equal(payload.flags, undefined);
+  assert.equal(payload.components, undefined);
+  assert.equal(embed.components, undefined);
+  assert.deepEqual(embed.fields.map(item => item.name), ['Branch', 'Commit', 'Duration']);
+  assert.equal(embed.footer.text, 'Manual run · Run #9');
+  assert.ok(!JSON.stringify(embed).includes('Job wall time'));
+  assertLimits(embed);
+});
+
+test('gives cancelled runs a compact stopped-job list without guessing a cause', async () => {
+  const { args, sent } = setup({ run: { conclusion: 'cancelled', event: 'merge_group' }, jobs: [
+    { id: 101, name: 'Windows', conclusion: 'cancelled' },
+    { id: 102, name: 'Linux', conclusion: 'success' },
+  ] });
+  await notify(args);
+  const embed = sent[0].payload.embeds[0];
+  assert.equal(embed.title, '⏹ CI cancelled');
+  assert.equal(embed.color, 0xbf8700);
+  assert.equal(embed.fields[0].name, 'Cancelled jobs');
+  assert.match(embed.fields[0].value, /Windows.*Cancelled/);
+  assert.ok(!embed.fields[0].value.includes('Step details unavailable'));
+  assert.match(embed.description, /1 cancelled · 1 passed/);
+  assert.equal(embed.fields.length, 4);
   assertLimits(embed);
 });
