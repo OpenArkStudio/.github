@@ -7,6 +7,11 @@ const labels = {
   neutral: 'Neutral', skipped: 'Skipped', stale: 'Stale',
   startup_failure: 'Startup failure',
 };
+const outcomes = {
+  success: 'passed', failure: 'failed', cancelled: 'cancelled', timed_out: 'timed out',
+  action_required: 'needs attention', startup_failure: 'could not start',
+  neutral: 'finished', skipped: 'skipped', stale: 'expired',
+};
 const events = {
   pull_request: 'Pull request', push: 'Push', merge_group: 'Merge queue',
   workflow_dispatch: 'Manual run', schedule: 'Scheduled run', workflow_run: 'Workflow completion',
@@ -86,16 +91,16 @@ function problemFields(jobs, runUrl) {
       const job = problems[index];
       const jobUrl = positiveId(job.id) && runUrl ? `${runUrl}/job/${job.id}` : '';
       const steps = (job.steps || []).filter(step => failed.has(step.conclusion));
-      const details = steps.slice(0, 2).map(step => text(step.name || '(unnamed step)', 80)).join('; ');
+      const details = steps.slice(0, 2).map(step => `**${text(step.name || '(unnamed step)', 80)}**`).join('; ');
       const stepSummary = steps.length
         ? `\n  ↳ ${details}${steps.length > 2 ? ` (+${steps.length - 2} more failed steps)` : ''}`
-        : failed.has(job.conclusion) ? '\n  ↳ Failed step unavailable' : '';
+        : failed.has(job.conclusion) ? '\n  ↳ Step details unavailable' : '';
       const row = `${link(text(job.name || '(unnamed job)', 100), jobUrl)} — ${labels[job.conclusion]}${stepSummary}`;
       if (rows.join('\n').length + (rows.length ? 1 : 0) + row.length > budget) break;
       rows.push(row);
       index++;
     }
-    fields.push({ name: fields.length ? 'Problems (continued)' : 'Failed / cancelled jobs', value: rows.join('\n') });
+    fields.push({ name: fields.length ? 'More jobs' : jobs.some(job => failed.has(job.conclusion)) ? 'Needs attention' : 'Cancelled jobs', value: rows.join('\n') });
   }
   if (index < problems.length) {
     fields[fields.length - 1].value += `\n… ${problems.length - index} more jobs; see the run for all results.`;
@@ -107,7 +112,7 @@ function buildPayload(context, run, jobs, runId) {
   const repoUrl = repositoryUrl(context);
   const runUrl = repoUrl ? `${repoUrl}/actions/runs/${runId}` : '';
   const attemptUrl = runUrl && positiveId(run.run_attempt) ? `${runUrl}/attempts/${run.run_attempt}` : runUrl;
-  const outcome = labels[run.conclusion] || 'Unknown result';
+  const outcome = outcomes[run.conclusion] || 'completed';
   const icon = run.conclusion === 'success' ? '✅' : failed.has(run.conclusion) ? '❌' : run.conclusion === 'cancelled' ? '⏹' : 'ℹ️';
   const counts = { passed: 0, failed: 0, cancelled: 0, skipped: 0, other: 0 };
   for (const job of jobs) {
@@ -117,36 +122,41 @@ function buildPayload(context, run, jobs, runId) {
     else if (job.conclusion === 'skipped') counts.skipped++;
     else counts.other++;
   }
-  const summary = Object.entries(counts).filter(([, count]) => count).map(([label, count]) => `${count} ${label}`).join(' · ') || 'No jobs reported';
+  const summary = ['failed', 'cancelled', 'passed', 'skipped', 'other'].filter(label => counts[label]).map(label => {
+    const value = `${counts[label]} ${label}`;
+    return label === 'failed' ? `**${value}**` : value;
+  }).join(' · ') || 'No jobs reported';
   const pulls = (run.pull_requests || []).filter(pr => positiveId(pr.number));
   const pull = pulls[0];
-  const ref = text(run.head_branch || '(detached)', 160);
-  const pullSummary = pull ? `${link(`PR #${pull.number}`, repoUrl ? `${repoUrl}/pull/${pull.number}` : '')}${pulls.length > 1 ? ` (+${pulls.length - 1} more PRs)` : ''}\n` : '';
+  const ref = text(run.head_branch || '(detached)', 100);
+  const pullSummary = pull ? `${link(`PR #${pull.number}`, repoUrl ? `${repoUrl}/pull/${pull.number}` : '')}${pulls.length > 1 ? ` (+${pulls.length - 1} more)` : ''}\n` : '';
   const sha = typeof run.head_sha === 'string' && /^[a-fA-F0-9]{7,64}$/.test(run.head_sha) ? run.head_sha : '';
   const displayTitle = run.display_title || run.name || 'Workflow completed';
   const subject = (run.head_commit?.message || '').split(/\r?\n/)[0];
   const commitTitle = subject === displayTitle ? '' : text(subject, 160);
   const fields = [
     ...problemFields(jobs, runUrl),
-    { name: 'Repository', value: link(text(`${context.repo.owner}/${context.repo.repo}`, 128), repoUrl), inline: true },
-    { name: 'Workflow', value: link(text(run.name || '(unnamed workflow)', 120), attemptUrl), inline: true },
-    { name: pull ? 'Pull request / branch' : 'Branch', value: pullSummary + ref },
-    { name: 'Commit', value: `${link(sha ? sha.slice(0, 12) : 'Unavailable', sha && repoUrl ? `${repoUrl}/commit/${sha}` : '')}${commitTitle ? `\n${commitTitle}` : ''}` },
+    { name: pull ? 'Pull request' : 'Branch', value: pullSummary + ref, inline: true },
+    { name: 'Commit', value: `${link(sha ? sha.slice(0, 12) : 'Unavailable', sha && repoUrl ? `${repoUrl}/commit/${sha}` : '')}${commitTitle ? `\n${commitTitle}` : ''}`, inline: true },
     { name: 'Duration', value: duration(jobs), inline: true },
-    { name: 'Jobs', value: summary, inline: true },
-    { name: 'Run', value: link(`Open run #${positiveId(run.run_number) ? run.run_number : '?'} · attempt ${positiveId(run.run_attempt) ? run.run_attempt : '?'}`, attemptUrl) },
   ];
+  const runLink = link('View run', attemptUrl);
+  const ownerUrl = repoUrl ? repoUrl.slice(0, repoUrl.lastIndexOf('/')) : '';
   // Fixed field budgets keep this single embed below Discord's 6,000-character
   // aggregate limit, including worst-case escaped text and two problem fields.
   return {
     allowed_mentions: { parse: [] },
     embeds: [{
-      title: `${icon} ${outcome} · ${text(run.name || '(unnamed workflow)', 200)}`,
-      description: text(displayTitle, 512),
+      author: {
+        name: text(`${context.repo.owner} / ${context.repo.repo}`, 128, false),
+        ...(repoUrl ? { url: repoUrl, icon_url: `${ownerUrl}.png?size=64` } : {}),
+      },
+      title: `${icon} ${text(run.name || '(unnamed workflow)', 180)} ${outcome}`,
+      description: `${text(displayTitle, 240)}\n${summary} · ${runLink}`,
       ...(attemptUrl ? { url: attemptUrl } : {}),
       color: run.conclusion === 'success' ? 0x2da44e : failed.has(run.conclusion) ? 0xcf222e : run.conclusion === 'cancelled' ? 0xbf8700 : 0x6e7781,
       fields,
-      footer: { text: `GitHub Actions · ${text(events[run.event] || run.event || 'Unknown event', 80, false)}` },
+      footer: { text: `${text(events[run.event] || run.event || 'Unknown event', 60, false)} · Run #${positiveId(run.run_number) ? run.run_number : '?'}${positiveId(run.run_attempt) && Number(run.run_attempt) > 1 ? ` · Attempt ${run.run_attempt}` : ''}` },
     }],
   };
 }
